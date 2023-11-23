@@ -1,8 +1,11 @@
-package udp_prof;
+package tcp_correctif;
 
-import java.io.*;
-import java.net.*;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.Scanner;
 
 
@@ -20,31 +23,28 @@ public class Client{
         }
     }
 
-    DatagramSocket socket;
-    InetAddress serverAddress;
-    int port;
+    Socket socket;
     Scanner scanner;
 
     public Client(int port) throws IOException, UnknownHostException{
-        this.socket = new DatagramSocket();
-        this.serverAddress = InetAddress.getByName("127.0.0.1");
-        this.port = port;
+        this.socket = new Socket("127.0.0.1", port);
         this.scanner = new Scanner(System.in);
     }
 
     public void run() throws IOException{
+        OutputStream out = this.socket.getOutputStream();
+        InputStream in = this.socket.getInputStream();
+
         while (true) {
             byte[] number1 = this.askForNumber();
             byte[] number2 = this.askForNumber();
             byte operator = this.askForOperator();
 
-            byte[] request = this.createRequestBuffer(number1, number2, operator);
+            out.write(number1);
+            out.write(number2);
+            out.write(operator);
 
-            DatagramPacket data = new DatagramPacket(request, request.length, this.serverAddress, this.port);
-
-            this.socket.send(data);
-
-            int result = this.getResult();
+            int result = this.getResult(in);
 
             System.out.println("Réponse du serveur : "+result);
         }
@@ -65,19 +65,9 @@ public class Client{
         return (byte) operator;
     }
 
-    public byte[] createRequestBuffer(byte[] number1, byte[] number2, byte operator){
-        byte[] request = new byte[9];
-        System.arraycopy(number1, 0, request, 0, 4);
-        System.arraycopy(number2, 0, request, 4, 4);
-        request[8] = operator;
-        return request;
-    }
-
-    public int getResult() throws IOException{
-        DatagramPacket dataReceived = new DatagramPacket(new byte[4], 4);
-        socket.receive(dataReceived);
-
-        byte[] response = dataReceived.getData();
+    public int getResult(InputStream in) throws IOException{
+        byte[] response = new byte[4];
+        in.read(response);
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
         buffer.put(response);
         buffer.rewind();
@@ -85,4 +75,3 @@ public class Client{
     }
 
 }
-

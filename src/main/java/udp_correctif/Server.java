@@ -1,12 +1,9 @@
-package tcp_prof;
+package udp_correctif;
 
-import java.net.Socket;
-import java.net.ServerSocket;
-import java.net.UnknownHostException;
+import java.io.*;
+import java.net.*;
 import java.nio.ByteBuffer;
-import java.io.OutputStream;
-import java.io.InputStream;
-import java.io.IOException;
+import java.util.Arrays;
 
 public class Server{
     public static void main(String[] args){
@@ -22,40 +19,40 @@ public class Server{
         }
     }
 
-    ServerSocket server;
+    DatagramSocket socket;
 
     public Server(int port) throws IOException, UnknownHostException{
-        this.server = new ServerSocket(port);
+        this.socket = new DatagramSocket(port);
     }
 
     public void run() throws IOException{
-        Socket client = server.accept();
-        InputStream in = client.getInputStream();
-        OutputStream out = client.getOutputStream();
+        byte[] buffer = new byte[9]; // 8 bytes for 2 numbers and 1 byte for operator
+        DatagramPacket data = new DatagramPacket(buffer, buffer.length);
+
         while (true){
-            int number1 = this.readNumber(in);
-            int number2 = this.readNumber(in);
-            char operator = this.readOperator(in);
+            this.socket.receive(data);
+            byte[] dataBytes = data.getData();
+
+            byte[] number1Bytes = Arrays.copyOfRange(dataBytes, 0, 4);
+            byte[] number2Bytes = Arrays.copyOfRange(dataBytes, 4, 8);
+
+            int number1 = this.byteToInt(number1Bytes);
+            int number2 = this.byteToInt(number2Bytes);
+            char operator = (char) dataBytes[8];
 
             System.out.println("Client Request : "+number1+" "+operator+" "+number2);
 
             int result = this.compute(number1, number2, operator);
             System.out.println(result);
-            this.sendResponse(out, result);
+            this.sendResponse(data, result);
         }
     }
 
-    public int readNumber(InputStream in) throws IOException{
-        byte[] bytes = new byte[4];
-        in.read(bytes);
+    public int byteToInt(byte[] bytes){
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
         buffer.put(bytes);
         buffer.rewind();
         return buffer.getInt();
-    }
-
-    public char readOperator(InputStream in) throws IOException{
-        return (char) in.read();
     }
 
     public int compute(int number1, int number2, int operator){
@@ -80,10 +77,14 @@ public class Server{
         return result;
     }
 
-    public void sendResponse(OutputStream out, int result) throws IOException{
+    public void sendResponse(DatagramPacket data, int result) throws IOException{
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
         buffer.putInt(result);
         buffer.rewind();
-        out.write(buffer.array());
+        byte[] resultBytes = buffer.array();
+
+        DatagramPacket response = new DatagramPacket(resultBytes, resultBytes.length, data.getAddress(), data.getPort());
+        this.socket.send(response);
     }
 }
+
