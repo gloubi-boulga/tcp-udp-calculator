@@ -1,15 +1,21 @@
 package tcp;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import static tcp.CalculatorService.getResult;
 import static tcp.Constant.PORT;
 
 /**
  * @author guho
  */
 public class Server {
+
+    private static final Logger LOGGER = LogManager.getLogger(Server.class);
 
     private ServerSocket serverSocket;
     private Socket socket;
@@ -18,29 +24,25 @@ public class Server {
 
     private void start() throws IOException {
 
+        LOGGER.info("Starting server on port {}", PORT);
         serverSocket = new ServerSocket(PORT);
-        socket = serverSocket.accept();
-
-        inputStream = socket.getInputStream();
-        outputStream = socket.getOutputStream();
-
-        this.startStateMachine();
-    }
-
-    private void stop() throws IOException {
-        serverSocket.close();
-        socket.close();
-    }
-
-    private void startStateMachine() throws IOException {
 
         while (true) {
+
+            socket = serverSocket.accept();
+            if(socket.isConnected()) {
+                LOGGER.info("Connection established with {}:{}", socket.getInetAddress(), socket.getLocalPort());
+            }
+
+            inputStream = socket.getInputStream();
+            outputStream = socket.getOutputStream();
+
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
             String input = bufferedReader.readLine();
 
-            System.out.println(input);
-            Integer result = CalculatorService.getResult(input);
+            LOGGER.info("Input received from client [ {} ]", input);
 
+            Integer result = getResult(input);
             outputStream.write((result+"\n").getBytes());
         }
     }
@@ -50,6 +52,7 @@ public class Server {
             final Server server = new Server();
             server.start();
         } catch (IOException e) {
+            e.printStackTrace();
             System.exit(-1);
         }
     }

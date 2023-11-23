@@ -1,5 +1,8 @@
 package tcp;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -10,11 +13,10 @@ import java.util.stream.Collectors;
  */
 public class CalculatorService {
 
-    public static String getFromScanner() {
+    public static String getFromScanner(final String message) {
         Scanner scanner = new Scanner(System.in);
-        System.out.print("Waiting for input : ");
+        System.out.print(message);
         String input = scanner.nextLine();
-        System.out.println(input);
         return input;
     }
 
@@ -23,8 +25,8 @@ public class CalculatorService {
         final List<String> inputs = extractInput(input);
 
         Integer firstNumber = Integer.parseInt(inputs.get(0));
-        char operation = inputs.get(1).charAt(0);
-        Integer secondNumber = Integer.parseInt(inputs.get(2));
+        Integer secondNumber = Integer.parseInt(inputs.get(1));
+        char operation = inputs.get(2).charAt(0);
 
         switch (operation) {
             case '+': return firstNumber + secondNumber;
@@ -36,7 +38,7 @@ public class CalculatorService {
     }
 
     public static List<String> extractInput(final String input) {
-        return Arrays.stream(input.split("GHP:"))
+        return Arrays.stream(input.split(":"))
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
     }

@@ -3,6 +3,7 @@ package tcp;
 import java.io.*;
 import java.net.Socket;
 
+import static tcp.CalculatorService.getFromScanner;
 import static tcp.Constant.HOST;
 import static tcp.Constant.PORT;
 
@@ -16,36 +17,32 @@ public class Client {
     private OutputStream outputStream;
 
     private void start() throws IOException {
+
         socket = new Socket(HOST, PORT);
         inputStream = socket.getInputStream();
         outputStream = socket.getOutputStream();
 
-        this.startStateMachine();
-    }
-
-    private void stop() throws IOException {
-        socket.close();
-    }
-
-    private void startStateMachine() throws IOException {
-
         while (true) {
-            String firstNumber = CalculatorService.getFromScanner();
-            String operator = CalculatorService.getFromScanner();
-            String secondNumber = CalculatorService.getFromScanner();
+            String firstNumber = getFromScanner("Enter first number : ");
+            String secondNumber = getFromScanner("Enter second number : ");
+            String operator = getFromScanner("Enter operator : ");
 
-            outputStream.write(("GHP:" + firstNumber).getBytes());
-            outputStream.write(("GHP:" + operator).getBytes());
-            outputStream.write(("GHP:" + secondNumber+ "\n").getBytes());
+            outputStream.write((firstNumber + ":").getBytes());
+            outputStream.write((secondNumber + ":").getBytes());
+            outputStream.write((operator + "\n").getBytes());
 
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
             System.out.println(bufferedReader.readLine());
         }
-
     }
 
-    public static void main(String[] args) throws IOException {
-        Client client = new Client();
-        client.start();
+    public static void main(String[] args) {
+        try {
+            final Client client = new Client();
+            client.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
     }
 }
