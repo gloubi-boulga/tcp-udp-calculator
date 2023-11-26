@@ -33,7 +33,7 @@ public class Client {
             outputStream.write((firstNumber + ":" + secondNumber + ":" + operator).getBytes());
             outputStream.flush();
 
-            byte[] bytes = new byte[1000];
+            byte[] bytes = new byte[4];
             int bytesRead = inputStream.read(bytes);
             String input = new String(bytes, 0, bytesRead, StandardCharsets.UTF_8);
 
