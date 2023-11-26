@@ -3,9 +3,12 @@ package tcp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 import static tcp.CalculatorService.getResult;
 import static tcp.Constant.PORT;
@@ -27,23 +30,23 @@ public class Server {
         LOGGER.info("Starting server on port {}", PORT);
         serverSocket = new ServerSocket(PORT);
 
+        socket = serverSocket.accept();
+        if(socket.isConnected()) {
+            LOGGER.info("Connection established with {}:{}", socket.getInetAddress(), socket.getLocalPort());
+        }
+
         while (true) {
-
-            socket = serverSocket.accept();
-            if(socket.isConnected()) {
-                LOGGER.info("Connection established with {}:{}", socket.getInetAddress(), socket.getLocalPort());
-            }
-
             inputStream = socket.getInputStream();
             outputStream = socket.getOutputStream();
 
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-            String input = bufferedReader.readLine();
-
+            byte[] bytes = new byte[11];
+            int bytesRead = inputStream.read(bytes);
+            String input = new String(bytes, 0, bytesRead, StandardCharsets.UTF_8);
             LOGGER.info("Input received from client [ {} ]", input);
 
             Integer result = getResult(input);
-            outputStream.write((result+"\n").getBytes());
+            outputStream.write(String.valueOf(result).getBytes());
+            outputStream.flush();
         }
     }
 
