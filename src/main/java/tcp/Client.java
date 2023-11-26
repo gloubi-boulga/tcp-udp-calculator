@@ -25,20 +25,18 @@ public class Client {
         inputStream = socket.getInputStream();
         outputStream = socket.getOutputStream();
 
-        //while (true) {
-            String firstNumber = getFromScanner("Enter first number : ");
-            String secondNumber = getFromScanner("Enter second number : ");
-            String operator = getFromScanner("Enter operator : ");
+        String firstNumber = getFromScanner("Enter first number : ");
+        String secondNumber = getFromScanner("Enter second number : ");
+        String operator = getFromScanner("Enter operator : ");
 
-            outputStream.write((firstNumber + ":" + secondNumber + ":" + operator).getBytes());
-            outputStream.flush();
+        outputStream.write((firstNumber + ":" + secondNumber + ":" + operator).getBytes());
+        outputStream.flush();
 
-            byte[] bytes = new byte[4];
-            int bytesRead = inputStream.read(bytes);
-            String input = new String(bytes, 0, bytesRead, StandardCharsets.UTF_8);
+        byte[] bytes = new byte[4];
+        int bytesRead = inputStream.read(bytes);
+        String input = new String(bytes, 0, bytesRead, StandardCharsets.UTF_8);
 
-            System.out.println(input);
-        //}
+        System.out.println(input);
     }
 
     public static void main(String[] args) {
