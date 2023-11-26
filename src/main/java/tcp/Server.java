@@ -30,23 +30,26 @@ public class Server {
         LOGGER.info("Starting server on port {}", PORT);
         serverSocket = new ServerSocket(PORT);
 
-        socket = serverSocket.accept();
-        if(socket.isConnected()) {
-            LOGGER.info("Connection established with {}:{}", socket.getInetAddress(), socket.getLocalPort());
-        }
-
         while (true) {
-            inputStream = socket.getInputStream();
-            outputStream = socket.getOutputStream();
 
-            byte[] bytes = new byte[11];
-            int bytesRead = inputStream.read(bytes);
-            String input = new String(bytes, 0, bytesRead, StandardCharsets.UTF_8);
-            LOGGER.info("Input received from client [ {} ]", input);
+            socket = serverSocket.accept();
+            if(socket.isConnected()) {
+                LOGGER.info("Connection established with {}:{}", socket.getInetAddress(), socket.getLocalPort());
 
-            Integer result = getResult(input);
-            outputStream.write(String.valueOf(result).getBytes());
-            outputStream.flush();
+                inputStream = socket.getInputStream();
+                outputStream = socket.getOutputStream();
+
+                byte[] bytes = new byte[11];
+                int bytesRead = inputStream.read(bytes);
+                String input = new String(bytes, 0, bytesRead, StandardCharsets.UTF_8);
+                LOGGER.info("Input received from client [ {} ]", input);
+
+                Integer result = getResult(input);
+                outputStream.write(String.valueOf(result).getBytes());
+                outputStream.flush();
+            }
+
+
         }
     }
 
