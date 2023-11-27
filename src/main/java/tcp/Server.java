@@ -20,6 +20,7 @@ public class Server {
 
     private ServerSocket serverSocket;
     private Socket socket;
+    private List<String> conversations = new ArrayList<>();
 
     private void start() throws IOException {
 
@@ -30,7 +31,7 @@ public class Server {
             socket = serverSocket.accept();
             if(socket.isConnected()) {
                 LOGGER.info("Connection established with {}:{}", socket.getInetAddress(), socket.getLocalPort());
-                Thread clientThread = new Thread(new ClientHandler(socket));
+                Thread clientThread = new Thread(new ClientHandler(socket, conversations));
                 clientThread.start();
             }
         }

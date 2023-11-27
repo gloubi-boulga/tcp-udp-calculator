@@ -4,11 +4,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.stream.Collectors;
 
-import static tcp.CalculatorService.getFromScanner;
-import static tcp.Constant.HOST;
-import static tcp.Constant.PORT;
+import static tcp.Constant.*;
+import static tcp.Service.getFromScanner;
+import static tcp.Service.getStringFromBytes;
 
 /**
  * @author guho
@@ -18,6 +22,7 @@ public class Client {
     private Socket socket;
     private InputStream inputStream;
     private OutputStream outputStream;
+    private Integer messageCount = 0;
 
     private void start() throws IOException {
 
@@ -25,20 +30,52 @@ public class Client {
         inputStream = socket.getInputStream();
         outputStream = socket.getOutputStream();
 
-        while (true) {
-            String firstNumber = getFromScanner("Enter first number : ");
-            String secondNumber = getFromScanner("Enter second number : ");
-            String operator = getFromScanner("Enter operator : ");
+        Thread getNewMessagesThread = new Thread(() -> {
+            Timer timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        outputStream.write("DATA".getBytes());
+                        outputStream.flush();
 
-            outputStream.write((firstNumber + ":" + secondNumber + ":" + operator).getBytes());
-            outputStream.flush();
+                        String input = getStringFromBytes(inputStream);
 
-            byte[] bytes = new byte[4];
-            int bytesRead = inputStream.read(bytes);
-            String input = new String(bytes, 0, bytesRead, StandardCharsets.UTF_8);
+                        if(input.startsWith("DATABACK") && !input.equals("DATABACK")) {
 
-            System.out.println(input);
-        }
+                            List<String> messages = Arrays.stream(input.split("DATABACK")[1].split(":")).collect(Collectors.toList());
+
+                            if(messageCount < messages.size()) {
+                                // It means new messages are in the pool
+                                int newMessageCount = messages.size() - messageCount;
+                                messageCount = messages.size();
+                                List<String> newMessages = messages.subList(messages.size()-newMessageCount, messages.size());
+                                for (String newMessage : newMessages) {
+                                    System.out.println("[] " + newMessage);
+                                }
+                            }
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }, 0, DATA_REFRESH_TIME);
+        });
+
+        Thread postNewMessageThread = new Thread(() -> {
+            while (true) {
+                try {
+                    String message = getFromScanner("Enter message : ");
+                    outputStream.write(message.getBytes());
+                    outputStream.flush();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        getNewMessagesThread.start();
+        postNewMessageThread.start();
     }
 
     public static void main(String[] args) {

@@ -7,11 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import static tcp.Service.*;
 import java.util.List;
-
-import static tcp.CalculatorService.getResult;
 
 public class ClientHandler implements Runnable {
 
@@ -22,28 +19,33 @@ public class ClientHandler implements Runnable {
     private InputStream inputStream;
     private OutputStream outputStream;
 
-    private List<String> conversations = new ArrayList<>();
+    private List<String> conversations;
 
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket, List<String> conversations) {
         this.socket = socket;
+        this.conversations = conversations;
     }
 
     @Override
     public void run() {
         try {
-            inputStream = socket.getInputStream();
-            outputStream = socket.getOutputStream();
+            while(true) {
+                inputStream = socket.getInputStream();
+                outputStream = socket.getOutputStream();
 
-            byte[] bytes = new byte[1000];
-            int bytesRead = inputStream.read(bytes);
-            String input = new String(bytes, 0, bytesRead, StandardCharsets.UTF_8);
-            LOGGER.info("Input received from client [ {} ]", input);
+                String input = getStringFromBytes(inputStream);
+                LOGGER.info("Input received from client [ {} ]", input);
 
-            conversations.add(input);
-            System.out.println(conversations.size());
-
-            outputStream.write("ok".getBytes());
-            outputStream.flush();
+                if("DATA".equals(input)) {
+                    LOGGER.info("Input is a command, processing it and sending response");
+                    String joined = String.join(":", conversations);
+                    outputStream.write(("DATABACK" + joined).getBytes());
+                    outputStream.flush();
+                } else {
+                    LOGGER.info("Input is a message, adding it to the conversation [ {} ]", conversations.size());
+                    conversations.add(input);
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(-1);
