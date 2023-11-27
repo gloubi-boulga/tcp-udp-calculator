@@ -25,7 +25,7 @@ public class Client {
         inputStream = socket.getInputStream();
         outputStream = socket.getOutputStream();
 
-        //while (true) {
+        while (true) {
             String firstNumber = getFromScanner("Enter first number : ");
             String secondNumber = getFromScanner("Enter second number : ");
             String operator = getFromScanner("Enter operator : ");
@@ -38,7 +38,7 @@ public class Client {
             String input = new String(bytes, 0, bytesRead, StandardCharsets.UTF_8);
 
             System.out.println(input);
-        //}
+        }
     }
 
     public static void main(String[] args) {
